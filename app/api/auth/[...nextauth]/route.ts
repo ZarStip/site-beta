@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { NextAuthOptions } from 'next-auth';
 
 // Настройка аутентификации
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -22,11 +22,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
+        const isValid = await bcrypt.compare(
+          credentials.password, 
+          user.password
+        );
         if (!isValid) return null;
 
         return {
-          id: user.id,
+          id: user.id.toString(), // Убедитесь, что id строка
           login: user.login,
           role: user.role,
         };
@@ -34,7 +37,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }: any) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -42,12 +45,12 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       if (token) {
         session.user = {
-          id: token.id,
-          login: token.login,
-          role: token.role,
+          id: token.id as string,
+          login: token.login as string,
+          role: token.role as string,
         };
       }
       return session;
@@ -57,10 +60,11 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    signIn: '/auth/signin', // Укажите свою страницу входа
+  },
 };
 
-// В Next.js 13+ нужно использовать функцию с одним параметром
-export const handler = NextAuth(authOptions);
+const handler = NextAuth(authOptions);
 
-// Экспортировать функции для маршрута
 export { handler as GET, handler as POST };
