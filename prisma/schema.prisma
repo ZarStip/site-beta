@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                String      @id @default(uuid())
+  login             String      @unique
+  password          String
+  nickname          String?
+  role              Role        @default(USER)
+  requests          Request[]   // Обратная связь с моделью Request
+  applications      Application[] // Заявки пользователя
+  messagesAsUser    Message[]   @relation("UserMessages")
+  messagesAsEngineer Message[]   @relation("EngineerMessages") // Убираем fields и references здесь
+  engineerApplications Application[] @relation("EngineerApplications") // Обратная связь для инженера
+}
+
+model Request {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+}
+
+model Application {
+  id          String     @id @default(cuid())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  status      ApplicationStatus
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  engineerId  String?
+  engineer    User?      @relation("EngineerApplications", fields: [engineerId], references: [id], onDelete: SetNull)
+  content     String
+  title       String
+  messages    Message[]  @relation("ApplicationMessages")
+}
+
+model Message {
+  id            String     @id @default(cuid())
+  content       String
+  createdAt     DateTime   @default(now())
+  userId        String?
+  engineerId    String?
+  applicationId String
+  user          User?      @relation("UserMessages", fields: [userId], references: [id], onDelete: SetNull)
+  engineer      User?      @relation("EngineerMessages", fields: [engineerId], references: [id], onDelete: SetNull)
+  application   Application @relation("ApplicationMessages", fields: [applicationId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  ENGINEER
+  USER
+}
+
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  CLOSED
+}
