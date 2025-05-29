@@ -2,6 +2,7 @@
   "name": "site-beta",
   "version": "1.0.0",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
